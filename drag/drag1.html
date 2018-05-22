@@ -1,0 +1,142 @@
+<html lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
+<title></title>
+<script type="text/javascript">
+    if(typeof jQuery == "undefined"){
+        document.write('<script src="http:\/\/code.jquery.com/jquery-1.8.3.js" type="text\/javascript"><\/script>');
+    }
+    </script>
+</head>
+<body>
+<div id="filewrap" style="height:100px; text-align:center; padding:10px; border:2px dotted pink">拖拽文件放在这里即可实现上传</div>
+<script type="text/javascript">
+function UploadFileByDragDropTita(aoConf, context){
+    this.context = context;
+    this.conf = aoConf;
+    this.init();
+}
+
+UploadFileByDragDropTita.prototype = {
+    init : function(){
+        this.dom = {};
+        this.dom.wrap = this.conf.target;
+        this.data = {};
+        this.data.url = this.conf.url;
+        this.data.hasEnter = false;
+        this.data.fileField = this.conf.fileField;
+        
+        this.func = this;
+        this.func.requestSuccessCallback = this.conf.requestSuccessCallback || function(res){};
+        this.func.requestBeforeCallback = this.conf.requestBeforeCallback || function(res){return true};
+        this.func.requestErrorCallback = this.conf.requestErrorCallback || function(res){};
+        this.func.requestDoneCallback = this.conf.requestDoneCallback || function(res){};
+        this.func.onDragenter = this.conf.onDragenter || function(e){};
+        this.func.onDragleave = this.conf.onDragleave || function(e){};
+        this.func.onDragover = this.conf.onDragover || function(e){};
+        this.func.onDrop = this.conf.onDrop || function(e){};   
+        this.addEvent();
+    },
+    addEvent : function(){
+        var that = this;
+    
+        //拖进区域
+        this.dom.wrap[0].addEventListener('dragenter', function(e) {
+            e.preventDefault();
+            that.dragEnter(e);
+            that.func.onDragenter(e);
+        }, false);
+        //拖离区域
+        this.dom.wrap[0].addEventListener('dragleave', function(e) {
+            that.dragLeave(e);
+            that.func.onDragleave(e);
+        }, false);
+        //在区域中拖动
+        this.dom.wrap[0].addEventListener('dragover', function(e) {
+            e.preventDefault();
+            that.dragOver(e);
+            that.func.onDragenter(e);
+        }, false);
+        //释放鼠标
+        this.dom.wrap[0].addEventListener('drop', function(e) {
+            e.preventDefault();
+            that.dragDrop(e);
+            that.func.onDrop(e);
+        }, false);
+    },
+    dragLeave : function(e){},
+    dragEnter : function(e){},
+    dragOver : function(e){},
+    dragDrop : function(e){
+        this.dealFile(e);
+    },
+    dealFile : function(e){
+        var fileList = e.dataTransfer.files;//获取文件列表
+        //检测是否是拖拽文件到页面的操作
+        if (fileList.length == 0) {return;};
+        var before = this.func.requestBeforeCallback(fileList[0]);
+        if(!before){
+            return false;
+        }
+        this.submit(fileList[0]);
+    },
+    submit : function(file){
+        var data;
+        var formData = new FormData();
+        formData.append(this.data.fileField, file);
+        data = formData;
+        
+        var that = this;
+        
+        $.ajax({
+            url : that.data.url,
+            type : "post",
+            processData: false,//tell jQuery not to process the data
+            contentType: false,//tell jQuery not to set contentType
+            data : data,
+            success : function(res){
+                that.func.requestSuccessCallback(res);
+            },
+            error : function(res){
+                that.func.requestErrorCallback(res);
+            },
+            complete : function(res){
+                that.func.requestDoneCallback(res);
+            }
+        });
+    }
+};
+
+
+//支持新一代浏览器Chrome/Safari/FF/IE10
+if(typeof FormData != "undefined"){
+    new UploadFileByDragDropTita({
+        "target" : $("#filewrap"),//拖动生效目标元素
+        "url" : "drag1.php",//文件上传地址
+        "fileField" : "file_upload",//文件域名，类似input[type=file]的name
+        "onDragenter" : function(e){},
+        "onDragleave" : function(e){},
+        "onDragover" : function(e){},
+        "onDrop" : function(e){},
+
+        "requestBeforeCallback" :  function(file){
+             console.log('1请求开始前回调方法')
+            return true;
+        },
+
+        "requestSuccessCallback" : function(res){
+            console.log('2请求成功结束后回调方法')
+        },
+        
+        "requestErrorCallback" :  function(res){
+            console.log('3请求失败结束后回调方法')
+        },
+
+        "requestDoneCallback" : function(res){
+            console.log('4请求完成后回调方法')
+        }//
+    }, window);
+}
+</script>
+</body>
+</html>
