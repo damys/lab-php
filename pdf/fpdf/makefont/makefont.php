@@ -201,6 +201,7 @@ function GetInfoFromType1($file, $embed, $map)
 	else
 		$info['MissingWidth'] = 0;
 	$widths = array_fill(0, 256, $info['MissingWidth']);
+	
 	foreach($map as $c=>$v)
 	{
 		if($v['name']!='.notdef')
